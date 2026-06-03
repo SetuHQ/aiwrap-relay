@@ -1,0 +1,28 @@
+stages:
+  - test
+  - build
+
+default:
+  image: node:20
+  before_script:
+    - npm ci --registry https://registry.npmjs.org/
+
+test:
+  stage: test
+  script:
+    - npm run typecheck
+    - npm test
+
+build:
+  stage: build
+  script:
+    - npm run build:binary
+    - npm run build:hindsight-binary
+    - AIWRAP_PACKAGE_ARCH=arm64 npm run package:release
+    - AIWRAP_PACKAGE_ARCH=x64 npm run package:release
+    - npm run verify:release
+  artifacts:
+    paths:
+      - release/*.tar.gz
+      - release/checksums.txt
+    expire_in: 1 week
