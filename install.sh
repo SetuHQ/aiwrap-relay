@@ -24,6 +24,13 @@ cleanup() {
     rm -rf "$dir"
   done
 }
+download() {
+  if [ -n "${GITLAB_TOKEN:-}" ]; then
+    curl -fsSL -H "PRIVATE-TOKEN: $GITLAB_TOKEN" "$1" -o "$2"
+  else
+    curl -fsSL "$1" -o "$2"
+  fi
+}
 trap cleanup EXIT INT TERM
 for arg in "$@"; do
   if [ "$arg" = "--dry-run" ]; then
@@ -46,9 +53,9 @@ else
     CHECKSUM_URL="$REPO_URL/-/releases/$VERSION/downloads/checksums.txt"
   fi
   echo "Downloading $URL"
-  curl -fsSL "$URL" -o "$TARBALL"
+  download "$URL" "$TARBALL"
   echo "Downloading $CHECKSUM_URL"
-  curl -fsSL "$CHECKSUM_URL" -o "$CHECKSUMS"
+  download "$CHECKSUM_URL" "$CHECKSUMS"
   EXPECTED="$(awk -v file="$ASSET" '$2 == file { print $1 }' "$CHECKSUMS")"
   if [ -z "$EXPECTED" ]; then
     echo "No checksum found for $ASSET" >&2
