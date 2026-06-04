@@ -53,7 +53,7 @@ export async function doctorCommand(options: DoctorOptions = {}) {
   statusLine(hindsightMcp ? "ok" : "warn", "Hindsight MCP binary", hindsightMcp ? managedPaths.hindsightMcp : "Bundle ~/.ai-cli-wrapper/bin/hindsight-mcp in the release.");
   const token = await getHindsightToken();
   if (!token && options.requireHindsight) failures++;
-  statusLine(token ? "ok" : options.requireHindsight ? "fail" : "warn", "Hindsight token", token ? "Stored in macOS Keychain" : "Run: aiwrap configure hindsight");
+  statusLine(token ? "ok" : options.requireHindsight ? "fail" : "skip", "Hindsight Cloud token", token ? "Stored in macOS Keychain" : "Not configured; local Hindsight modes may not need one.");
 
   if (codexPath) {
     const list = await listCodexMcp();

@@ -22,7 +22,7 @@ export async function setHindsightToken(token: string): Promise<void> {
     "-U",
   ]);
   if (!result.ok) {
-    throw new Error(`Failed to store Hindsight token in Keychain: ${result.stderr}`);
+    throw new Error(`Failed to store Hindsight Cloud token in Keychain: ${result.stderr}`);
   }
 }
 

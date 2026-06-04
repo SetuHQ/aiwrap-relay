@@ -1,6 +1,6 @@
 {
   "name": "aiwrap-relay",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "macOS wrapper for Codex and Claude with RTK and Hindsight MCP integration",
   "type": "module",

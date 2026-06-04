@@ -1,14 +1,11 @@
-import { confirm } from "@inquirer/prompts";
 import { exists } from "../lib/files.js";
 import { ensureManagedHindsightMcp, registerClaudeHindsight, registerCodexHindsight } from "../lib/hindsight.js";
 import { installLaunchers } from "../lib/install-managed.js";
-import { getHindsightToken } from "../lib/keychain.js";
 import { info, statusLine, step } from "../lib/logger.js";
 import { assertMacOS, macArch } from "../lib/platform.js";
 import { managedPaths } from "../lib/paths.js";
 import { commandExists } from "../lib/shell.js";
 import { configureRtkForClaude, configureRtkForCodex, ensureManagedRtk } from "../lib/rtk.js";
-import { configureHindsightCommand } from "./configure-hindsight.js";
 import { doctorCommand } from "./doctor.js";
 
 type InstallOptions = {
@@ -66,11 +63,6 @@ Then rerun:
   if (options.hindsight !== false) {
     const mcpReady = await ensureManagedHindsightMcp();
     statusLine(mcpReady ? "ok" : "warn", mcpReady ? `Hindsight MCP ready: ${managedPaths.hindsightMcp}` : "Hindsight MCP binary is not bundled yet", mcpReady ? undefined : "Package it into the GitLab release at ~/.ai-cli-wrapper/bin/hindsight-mcp");
-    if (!(await getHindsightToken())) {
-      const shouldConfigure = options.yes ? false : await confirm({ message: "Configure Hindsight token now?", default: true });
-      if (shouldConfigure) await configureHindsightCommand();
-      else statusLine("warn", "Hindsight token missing", "Run: aiwrap configure hindsight");
-    }
     if (mcpReady && codexPath) {
       const result = await registerCodexHindsight(Boolean(options.dryRun));
       statusLine(result.ok ? "ok" : "fix", "Codex Hindsight MCP registration", result.ok ? undefined : "Run: aiwrap repair mcp");

@@ -37,7 +37,7 @@ program
   .description("validate installation and print repair guidance")
   .option("--verbose", "print detailed diagnostics")
   .option("--hindsight", "include Hindsight API checks")
-  .option("--require-hindsight", "treat missing Hindsight token as failure")
+  .option("--require-hindsight", "treat missing Hindsight Cloud token as failure")
   .action(doctorCommand);
 
 program
@@ -62,7 +62,7 @@ program
   .command("uninstall")
   .description("remove aiwrap-managed files and config entries")
   .option("--yes", "do not prompt")
-  .option("--keep-keychain", "keep Hindsight token in Keychain")
+  .option("--keep-keychain", "keep Hindsight Cloud token in Keychain")
   .action(uninstallCommand);
 
 program
