@@ -1,6 +1,6 @@
 # Security
 
-- Optional Hindsight Cloud tokens are stored in macOS Keychain under service `aiwrap.hindsight` and account `default`.
+- Hindsight Cloud/API tokens are not configured or stored by `aiwrap`.
 - Tokens are not written to `~/.codex/config.toml`, `~/.claude.json`, or `~/.ai-cli-wrapper/config.json`.
 - The installer does not use `sudo`.
 - The installer does not install Codex CLI or Claude Code.

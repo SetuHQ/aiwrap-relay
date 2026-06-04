@@ -5,7 +5,6 @@
 | `aiwrap: command not found` | `~/.local/bin` is not on `PATH` | Add `export PATH="$HOME/.local/bin:$PATH"` to `~/.zshrc` |
 | RTK installed but no token savings | RTK init not active or the AI CLI session was not restarted | Run `aiwrap repair rtk`, then restart Codex/Claude |
 | Hindsight tools unavailable | MCP not registered or client was already running | Run `aiwrap repair mcp`, then restart Codex/Claude |
-| Hindsight Cloud auth fails | Missing, expired, or under-scoped Cloud token | Run `aiwrap configure hindsight` |
 | macOS blocks a binary | Gatekeeper quarantine | Run `xattr -d com.apple.quarantine ~/.ai-cli-wrapper/bin/<binary>` |
 | Duplicate Hindsight MCP server | Existing manual MCP config | Run `aiwrap doctor --verbose`, then choose whether to replace manually |
 

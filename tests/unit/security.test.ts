@@ -10,10 +10,10 @@ describe("secret handling", () => {
     expect(script).not.toContain("HINDSIGHT_API_TOKEN=hs_pat");
   });
 
-  it("launch command reads token from Keychain and never hardcodes a PAT", () => {
+  it("launch command does not inject Cloud/API tokens", () => {
     const source = readFileSync(join(process.cwd(), "src/commands/launch-hindsight-mcp.ts"), "utf8");
-    expect(source).toContain("getHindsightToken");
-    expect(source).toContain("HINDSIGHT_API_TOKEN");
+    expect(source).not.toContain("getHindsightToken");
+    expect(source).not.toContain("HINDSIGHT_API_TOKEN");
     expect(source).not.toContain("hs_pat");
   });
 });

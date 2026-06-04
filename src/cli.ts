@@ -2,7 +2,6 @@
 import { Command } from "commander";
 import { installCommand } from "./commands/install.js";
 import { doctorCommand } from "./commands/doctor.js";
-import { configureHindsightCommand } from "./commands/configure-hindsight.js";
 import { repairCommand } from "./commands/repair.js";
 import { uninstallCommand } from "./commands/uninstall.js";
 import { launchHindsightMcpCommand } from "./commands/launch-hindsight-mcp.js";
@@ -18,7 +17,7 @@ const program = new Command();
 program
   .name("aiwrap")
   .description("macOS wrapper for Codex and Claude with RTK and Hindsight MCP")
-  .version("0.1.0");
+  .version("0.1.2");
 
 program
   .command("install")
@@ -36,20 +35,8 @@ program
   .command("doctor")
   .description("validate installation and print repair guidance")
   .option("--verbose", "print detailed diagnostics")
-  .option("--hindsight", "include Hindsight API checks")
-  .option("--require-hindsight", "treat missing Hindsight Cloud token as failure")
+  .option("--hindsight", "include Hindsight checks")
   .action(doctorCommand);
-
-program
-  .command("configure")
-  .description("configure integrations")
-  .argument("target", "configuration target, currently: hindsight")
-  .action(async (target) => {
-    if (target !== "hindsight") {
-      throw new Error(`Unknown configure target: ${target}`);
-    }
-    await configureHindsightCommand();
-  });
 
 program
   .command("repair")
@@ -62,7 +49,6 @@ program
   .command("uninstall")
   .description("remove aiwrap-managed files and config entries")
   .option("--yes", "do not prompt")
-  .option("--keep-keychain", "keep Hindsight Cloud token in Keychain")
   .action(uninstallCommand);
 
 program

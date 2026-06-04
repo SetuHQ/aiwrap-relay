@@ -30,7 +30,6 @@ If only Codex is installed, `aiwrap` configures Codex only. If only Claude is in
   - Claude: `rtk init -g`
   - Codex: `rtk init -g --codex`
 - Registers Hindsight MCP for detected clients.
-- Optionally stores a Hindsight Cloud token in macOS Keychain when you configure Cloud/external API mode.
 - Provides `aiwrap doctor` as the validation and repair loop.
 
 ## What This Does Not Do
@@ -40,7 +39,7 @@ If only Codex is installed, `aiwrap` configures Codex only. If only Claude is in
 - Does not require Homebrew, npm global install, Cargo, pip, or sudo for users.
 - Does not replace `codex` or `claude`.
 - Does not affect browser/chat apps such as ChatGPT web or Claude.ai.
-- Does not write Hindsight Cloud tokens into Codex or Claude config files.
+- Does not configure Hindsight Cloud or store Hindsight API tokens.
 - Does not remove unrelated MCP servers or user config.
 
 ## Commands
@@ -49,7 +48,6 @@ If only Codex is installed, `aiwrap` configures Codex only. If only Claude is in
 aiwrap install
 aiwrap doctor
 aiwrap doctor --verbose
-aiwrap configure hindsight
 aiwrap repair
 aiwrap repair rtk
 aiwrap repair mcp
@@ -58,27 +56,13 @@ aiwrap uninstall
 
 After install, continue using your normal `codex` and `claude` commands.
 
-## Hindsight Setup
+## Hindsight Local Setup
 
-During install, `aiwrap` registers Hindsight MCP for detected clients. It does not require a Hindsight Cloud token by default.
+During install, `aiwrap` registers Hindsight MCP for detected clients. This wrapper is local-only and does not configure Hindsight Cloud or prompt for a Hindsight API token.
 
-For Hindsight Cloud or another external Hindsight API, configure a token later:
+Local Hindsight modes may need an LLM provider key such as `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or Ollama, depending on the mode you choose in Hindsight's docs.
 
-```bash
-aiwrap configure hindsight
-```
-
-Steps to create a Hindsight Cloud token:
-
-1. Open https://ui.hindsight.vectorize.io/.
-2. Go to API Settings.
-3. Create a Personal Access Token.
-4. Copy the token.
-5. Paste it into the `aiwrap configure hindsight` prompt. Input is hidden.
-
-Local Hindsight modes may instead need an LLM provider key such as `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or Ollama, depending on the mode you choose in Hindsight's docs.
-
-Cloud tokens are stored in macOS Keychain under service `aiwrap.hindsight`, account `default`.
+See Hindsight local docs: https://hindsight.vectorize.io/sdks/integrations/local-mcp
 
 ## Architecture
 
@@ -91,7 +75,6 @@ codex / claude
               |
               +-- hindsight-mcp-launcher
                       |
-                      +-- optional macOS Keychain Cloud token
                       +-- ~/.ai-cli-wrapper/bin/hindsight-mcp
 ```
 
@@ -109,7 +92,6 @@ codex / claude
 | `aiwrap: command not found` | `~/.local/bin` is not on `PATH` | Add `export PATH="$HOME/.local/bin:$PATH"` to `~/.zshrc` |
 | RTK installed but no savings | RTK init not active or client not restarted | Run `aiwrap repair rtk`, restart Codex/Claude |
 | Hindsight unavailable | MCP not registered or client not restarted | Run `aiwrap repair mcp`, restart Codex/Claude |
-| Hindsight Cloud auth fails | Missing or invalid Cloud token | Run `aiwrap configure hindsight` |
 | macOS blocks binary | Gatekeeper quarantine | Run `xattr -d com.apple.quarantine ~/.ai-cli-wrapper/bin/<binary>` |
 | Duplicate MCP server | Existing manual config | Run `aiwrap doctor --verbose` and decide whether to replace manually |
 
@@ -147,7 +129,7 @@ Pass criteria:
 - Codex and Claude are not installed by `aiwrap`.
 - At least one detected client is configured.
 - RTK is configured using upstream mechanisms.
-- Hindsight Cloud token is not stored in plaintext config.
+- Hindsight Cloud/API tokens are not configured or stored by `aiwrap`.
 - Hindsight MCP launcher passes arguments through to the bundled MCP binary.
 - Re-running install is safe.
 
@@ -218,7 +200,7 @@ Package manager usage is for contributors only. User releases should be standalo
 ## Safety Guarantees
 
 - We do not replace `codex` or `claude`.
-- We do not store Hindsight Cloud tokens in Codex or Claude config files.
+- We do not configure Hindsight Cloud or store Hindsight API tokens.
 - We do not overwrite unrelated MCP servers.
 - The installer is designed to be safe to re-run.
 - The uninstaller removes only wrapper-managed files and config entries.

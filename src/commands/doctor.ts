@@ -1,6 +1,5 @@
 import { exists } from "../lib/files.js";
 import { ensureManagedHindsightMcp, listClaudeMcp, listCodexMcp } from "../lib/hindsight.js";
-import { getHindsightToken } from "../lib/keychain.js";
 import { statusLine, step } from "../lib/logger.js";
 import { assertMacOS, macArch } from "../lib/platform.js";
 import { AIWRAP_BIN, LOCAL_BIN, managedPaths } from "../lib/paths.js";
@@ -9,7 +8,6 @@ import { commandExists, runSafe } from "../lib/shell.js";
 type DoctorOptions = {
   verbose?: boolean;
   hindsight?: boolean;
-  requireHindsight?: boolean;
 };
 
 export async function doctorCommand(options: DoctorOptions = {}) {
@@ -51,9 +49,6 @@ export async function doctorCommand(options: DoctorOptions = {}) {
 
   const hindsightMcp = await ensureManagedHindsightMcp();
   statusLine(hindsightMcp ? "ok" : "warn", "Hindsight MCP binary", hindsightMcp ? managedPaths.hindsightMcp : "Bundle ~/.ai-cli-wrapper/bin/hindsight-mcp in the release.");
-  const token = await getHindsightToken();
-  if (!token && options.requireHindsight) failures++;
-  statusLine(token ? "ok" : options.requireHindsight ? "fail" : "skip", "Hindsight Cloud token", token ? "Stored in macOS Keychain" : "Not configured; local Hindsight modes may not need one.");
 
   if (codexPath) {
     const list = await listCodexMcp();
