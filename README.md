@@ -14,7 +14,7 @@ This project intentionally does not install Codex or Claude for you.
 ## Quick Start
 
 ```bash
-curl -fsSL https://gitlab.com/brokentusk/platform/aiwrap-relay/-/raw/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/SetuHQ/aiwrap-relay/main/install.sh | sh
 aiwrap doctor
 codex
 claude
@@ -132,7 +132,7 @@ exec zsh
 Primary acceptance test:
 
 ```bash
-curl -fsSL https://gitlab.com/brokentusk/platform/aiwrap-relay/-/raw/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/SetuHQ/aiwrap-relay/main/install.sh | sh
 aiwrap doctor
 codex --version
 claude --version
@@ -171,7 +171,7 @@ release/checksums.txt
 
 Publish the tarballs and `checksums.txt` to GitLab Releases or GitHub Releases. The bootstrap installer verifies SHA-256 before extracting.
 
-For a public GitHub repo, the installer can be used with:
+For an alternate GitHub repo, override `AIWRAP_REPO_URL`:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/<owner>/aiwrap-relay/main/install.sh | \
@@ -197,7 +197,7 @@ Use `aiwrap uninstall` after a full local install test if you want to remove man
 ## Uninstall
 
 ```bash
-curl -fsSL https://gitlab.com/brokentusk/platform/aiwrap-relay/-/raw/main/uninstall.sh | sh
+curl -fsSL https://raw.githubusercontent.com/SetuHQ/aiwrap-relay/main/uninstall.sh | sh
 ```
 
 Uninstall removes only `aiwrap`-managed files and launchers. It does not uninstall Codex, Claude, or your Hindsight account data.

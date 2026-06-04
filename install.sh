@@ -13,7 +13,7 @@ case "$ARCH" in
   *) echo "Unsupported macOS architecture: $ARCH" >&2; exit 1 ;;
 esac
 
-REPO_URL="${AIWRAP_REPO_URL:-https://gitlab.com/brokentusk/platform/aiwrap-relay}"
+REPO_URL="${AIWRAP_REPO_URL:-https://github.com/SetuHQ/aiwrap-relay}"
 VERSION="${AIWRAP_VERSION:-latest}"
 INSTALL_DIR="$HOME/.ai-cli-wrapper"
 LOCAL_BIN="$HOME/.local/bin"
