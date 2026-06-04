@@ -169,7 +169,14 @@ release/aiwrap-darwin-x64.tar.gz
 release/checksums.txt
 ```
 
-Publish the tarballs and `checksums.txt` to GitLab Releases. The bootstrap installer verifies SHA-256 before extracting.
+Publish the tarballs and `checksums.txt` to GitLab Releases or GitHub Releases. The bootstrap installer verifies SHA-256 before extracting.
+
+For a public GitHub repo, the installer can be used with:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/<owner>/aiwrap-relay/main/install.sh | \
+  AIWRAP_REPO_URL="https://github.com/<owner>/aiwrap-relay" sh
+```
 
 Verify release artifacts locally:
 

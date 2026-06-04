@@ -45,13 +45,26 @@ else
   CLEANUP_DIRS="$CLEANUP_DIRS $TMPDIR"
   TARBALL="$TMPDIR/$ASSET"
   CHECKSUMS="$TMPDIR/checksums.txt"
-  if [ "$VERSION" = "latest" ]; then
-    URL="$REPO_URL/-/releases/permalink/latest/downloads/$ASSET"
-    CHECKSUM_URL="$REPO_URL/-/releases/permalink/latest/downloads/checksums.txt"
-  else
-    URL="$REPO_URL/-/releases/$VERSION/downloads/$ASSET"
-    CHECKSUM_URL="$REPO_URL/-/releases/$VERSION/downloads/checksums.txt"
-  fi
+  case "$REPO_URL" in
+    *github.com*)
+      if [ "$VERSION" = "latest" ]; then
+        URL="$REPO_URL/releases/latest/download/$ASSET"
+        CHECKSUM_URL="$REPO_URL/releases/latest/download/checksums.txt"
+      else
+        URL="$REPO_URL/releases/download/$VERSION/$ASSET"
+        CHECKSUM_URL="$REPO_URL/releases/download/$VERSION/checksums.txt"
+      fi
+      ;;
+    *)
+      if [ "$VERSION" = "latest" ]; then
+        URL="$REPO_URL/-/releases/permalink/latest/downloads/$ASSET"
+        CHECKSUM_URL="$REPO_URL/-/releases/permalink/latest/downloads/checksums.txt"
+      else
+        URL="$REPO_URL/-/releases/$VERSION/downloads/$ASSET"
+        CHECKSUM_URL="$REPO_URL/-/releases/$VERSION/downloads/checksums.txt"
+      fi
+      ;;
+  esac
   echo "Downloading $URL"
   download "$URL" "$TARBALL"
   echo "Downloading $CHECKSUM_URL"
