@@ -20,13 +20,6 @@ codexx
 claudex
 ```
 
-For the private `brokentusk/platform` GitLab group, provide a GitLab token that can read the repository and releases:
-
-```bash
-export GITLAB_TOKEN="<your-token>"
-curl -fsSL -H "PRIVATE-TOKEN: $GITLAB_TOKEN" https://gitlab.com/brokentusk/platform/aiwrap-relay/-/raw/main/install.sh | sh
-```
-
 If only Codex is installed, `aiwrap` configures Codex only. If only Claude is installed, it configures Claude only. If neither exists, install stops with clear guidance.
 
 ## What This Does
@@ -156,8 +149,6 @@ codexx --version
 claudex --version
 ~/.ai-cli-wrapper/bin/hindsight-mcp-launcher --version
 ```
-
-For the private group, use the authenticated installer form from Quick Start.
 
 Pass criteria:
 
