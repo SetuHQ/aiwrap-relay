@@ -13,8 +13,6 @@ export const CLAUDE_SETTINGS = join(HOME, ".claude", "settings.json");
 
 export const managedPaths = {
   aiwrap: join(AIWRAP_BIN, "aiwrap"),
-  codexx: join(AIWRAP_BIN, "codexx"),
-  claudex: join(AIWRAP_BIN, "claudex"),
   rtk: join(AIWRAP_BIN, "rtk"),
   hindsightMcp: join(AIWRAP_BIN, "hindsight-mcp"),
   hindsightLauncher: join(AIWRAP_BIN, "hindsight-mcp-launcher"),

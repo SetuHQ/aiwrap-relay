@@ -81,7 +81,7 @@ fi
 
 mkdir -p "$INSTALL_DIR" "$LOCAL_BIN"
 tar -xzf "$TARBALL" -C "$INSTALL_DIR" --strip-components=1
-chmod +x "$INSTALL_DIR/bin/aiwrap" "$INSTALL_DIR/bin/codexx" "$INSTALL_DIR/bin/claudex" "$INSTALL_DIR/bin/hindsight-mcp-launcher" "$INSTALL_DIR/bin/hindsight-mcp" 2>/dev/null || true
+chmod +x "$INSTALL_DIR/bin/aiwrap" "$INSTALL_DIR/bin/hindsight-mcp-launcher" "$INSTALL_DIR/bin/hindsight-mcp" 2>/dev/null || true
 AIWRAP_LINK="$LOCAL_BIN/aiwrap"
 AIWRAP_TARGET="$INSTALL_DIR/bin/aiwrap"
 if [ -L "$AIWRAP_LINK" ]; then

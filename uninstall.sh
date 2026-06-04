@@ -11,6 +11,14 @@ if [ -x "$AIWRAP" ]; then
   exec "$AIWRAP" uninstall "$@"
 fi
 
-rm -f "$HOME/.local/bin/aiwrap" "$HOME/.local/bin/codexx" "$HOME/.local/bin/claudex"
+for command in aiwrap codexx claudex; do
+  path="$HOME/.local/bin/$command"
+  if [ -L "$path" ]; then
+    target="$(readlink "$path" || true)"
+    case "$target" in
+      "$HOME/.ai-cli-wrapper"/*) rm -f "$path" ;;
+    esac
+  fi
+done
 rm -rf "$HOME/.ai-cli-wrapper"
 echo "aiwrap removed"

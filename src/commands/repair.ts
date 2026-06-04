@@ -12,8 +12,8 @@ export async function repairCommand(target = "all") {
   const claude = Boolean(await commandExists("claude"));
 
   if (target === "all" || target === "permissions") {
-    await installLaunchers({ codex, claude });
-    statusLine("ok", "Launchers repaired");
+    await installLaunchers();
+    statusLine("ok", "Managed launchers repaired");
   }
 
   if (target === "all" || target === "rtk") {

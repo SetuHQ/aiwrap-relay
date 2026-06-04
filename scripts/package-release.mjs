@@ -25,8 +25,6 @@ if (!existsSync(packagedHindsight)) throw new Error(`Missing ${packagedHindsight
 
 await copyFile(packagedCli, join(binDir, "aiwrap"));
 await chmod(join(binDir, "aiwrap"), 0o755);
-await writeFile(join(binDir, "codexx"), `#!/bin/sh\nset -eu\nif ! command -v codex >/dev/null 2>&1; then\n  echo "Codex CLI not found. Install Codex, then run: aiwrap install" >&2\n  exit 127\nfi\nexec codex "$@"\n`, { mode: 0o755 });
-await writeFile(join(binDir, "claudex"), `#!/bin/sh\nset -eu\nif ! command -v claude >/dev/null 2>&1; then\n  echo "Claude Code not found. Install Claude Code, then run: aiwrap install" >&2\n  exit 127\nfi\nexec claude "$@"\n`, { mode: 0o755 });
 await writeFile(join(binDir, "hindsight-mcp-launcher"), `#!/bin/sh
 set -eu
 exec "$HOME/.ai-cli-wrapper/bin/aiwrap" launch-hindsight-mcp "$@"

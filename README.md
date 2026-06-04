@@ -16,15 +16,15 @@ This project intentionally does not install Codex or Claude for you.
 ```bash
 curl -fsSL https://gitlab.com/brokentusk/platform/aiwrap-relay/-/raw/main/install.sh | sh
 aiwrap doctor
-codexx
-claudex
+codex
+claude
 ```
 
 If only Codex is installed, `aiwrap` configures Codex only. If only Claude is installed, it configures Claude only. If neither exists, install stops with clear guidance.
 
 ## What This Does
 
-- Installs `aiwrap`, `codexx`, and/or `claudex` under your home directory.
+- Installs `aiwrap` under your home directory.
 - Installs wrapper-managed RTK under `~/.ai-cli-wrapper/bin/rtk`.
 - Configures RTK using upstream-supported setup:
   - Claude: `rtk init -g`
@@ -56,12 +56,7 @@ aiwrap repair mcp
 aiwrap uninstall
 ```
 
-Launchers:
-
-```bash
-codexx   # delegates to codex
-claudex  # delegates to claude
-```
+After install, continue using your normal `codex` and `claude` commands.
 
 ## Hindsight Setup
 
@@ -87,26 +82,22 @@ The token is stored in macOS Keychain under service `aiwrap.hindsight`, account 
 ## Architecture
 
 ```text
-codexx / claudex
+codex / claude
       |
-      +-- codex / claude
+      +-- RTK configured by upstream init
+      |
+      +-- Hindsight MCP
               |
-              +-- RTK configured by upstream init
-              |
-              +-- Hindsight MCP
+              +-- hindsight-mcp-launcher
                       |
-                      +-- hindsight-mcp-launcher
-                              |
-                              +-- macOS Keychain token
-                              +-- ~/.ai-cli-wrapper/bin/hindsight-mcp
+                      +-- macOS Keychain token
+                      +-- ~/.ai-cli-wrapper/bin/hindsight-mcp
 ```
 
 ## Files
 
 - `~/.ai-cli-wrapper/` stores managed binaries, config, logs, and backups.
 - `~/.local/bin/aiwrap` symlinks to the managed binary.
-- `~/.local/bin/codexx` exists only when Codex is detected.
-- `~/.local/bin/claudex` exists only when Claude is detected.
 - `~/.codex/config.toml` may receive a Hindsight MCP entry through Codex MCP setup.
 - Claude Code user MCP config may receive a Hindsight MCP entry through `claude mcp add --scope user`.
 
@@ -115,8 +106,6 @@ codexx / claudex
 | Symptom | Likely Cause | Fix |
 |---|---|---|
 | `aiwrap: command not found` | `~/.local/bin` is not on `PATH` | Add `export PATH="$HOME/.local/bin:$PATH"` to `~/.zshrc` |
-| `codexx: command not found` | Codex not detected or PATH issue | Install Codex, rerun `aiwrap install`, check PATH |
-| `claudex: command not found` | Claude not detected or PATH issue | Install Claude, rerun `aiwrap install`, check PATH |
 | RTK installed but no savings | RTK init not active or client not restarted | Run `aiwrap repair rtk`, restart Codex/Claude |
 | Hindsight unavailable | MCP not registered or client not restarted | Run `aiwrap repair mcp`, restart Codex/Claude |
 | Hindsight auth fails | Missing or invalid token | Run `aiwrap configure hindsight` |
@@ -145,8 +134,8 @@ Primary acceptance test:
 ```bash
 curl -fsSL https://gitlab.com/brokentusk/platform/aiwrap-relay/-/raw/main/install.sh | sh
 aiwrap doctor
-codexx --version
-claudex --version
+codex --version
+claude --version
 ~/.ai-cli-wrapper/bin/hindsight-mcp-launcher --version
 ```
 
