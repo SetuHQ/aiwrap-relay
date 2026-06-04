@@ -3,8 +3,6 @@
 | Symptom | Likely Cause | Fix |
 |---|---|---|
 | `aiwrap: command not found` | `~/.local/bin` is not on `PATH` | Add `export PATH="$HOME/.local/bin:$PATH"` to `~/.zshrc` |
-| `codexx: command not found` | Codex was not detected or PATH is missing | Install Codex, rerun `aiwrap install`, then check PATH |
-| `claudex: command not found` | Claude was not detected or PATH is missing | Install Claude Code, rerun `aiwrap install`, then check PATH |
 | RTK installed but no token savings | RTK init not active or the AI CLI session was not restarted | Run `aiwrap repair rtk`, then restart Codex/Claude |
 | Hindsight tools unavailable | MCP not registered or client was already running | Run `aiwrap repair mcp`, then restart Codex/Claude |
 | Hindsight auth fails | Missing, expired, or under-scoped token | Run `aiwrap configure hindsight` |

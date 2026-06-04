@@ -11,8 +11,6 @@ const releaseDir = join(root, "release");
 const checksumsPath = join(releaseDir, "checksums.txt");
 const requiredFiles = [
   "aiwrap/bin/aiwrap",
-  "aiwrap/bin/codexx",
-  "aiwrap/bin/claudex",
   "aiwrap/bin/hindsight-mcp",
   "aiwrap/bin/hindsight-mcp-launcher",
   "aiwrap/VERSION",

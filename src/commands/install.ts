@@ -43,7 +43,7 @@ Then rerun:
   statusLine(claudePath ? "ok" : "skip", claudePath ? `Claude found: ${claudePath}` : "Claude not found");
 
   if (!options.dryRun) {
-    await installLaunchers({ codex: Boolean(codexPath), claude: Boolean(claudePath) });
+    await installLaunchers();
   }
 
   if (options.rtk !== false) {
