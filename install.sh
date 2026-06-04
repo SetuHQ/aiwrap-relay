@@ -31,6 +31,17 @@ download() {
     curl -fsSL "$1" -o "$2"
   fi
 }
+run_aiwrap_install() {
+  aiwrap_bin="$1"
+  shift
+  if { exec 3</dev/tty; } 2>/dev/null; then
+    "$aiwrap_bin" install "$@" <&3
+    status=$?
+    exec 3<&-
+    return "$status"
+  fi
+  "$aiwrap_bin" install "$@"
+}
 trap cleanup EXIT INT TERM
 for arg in "$@"; do
   if [ "$arg" = "--dry-run" ]; then
@@ -88,7 +99,7 @@ if [ "$DRY_RUN" = "1" ]; then
   CLEANUP_DIRS="$CLEANUP_DIRS $EXTRACT_DIR"
   tar -xzf "$TARBALL" -C "$EXTRACT_DIR"
   chmod +x "$EXTRACT_DIR/aiwrap/bin/aiwrap" 2>/dev/null || true
-  "$EXTRACT_DIR/aiwrap/bin/aiwrap" install "$@"
+  run_aiwrap_install "$EXTRACT_DIR/aiwrap/bin/aiwrap" "$@"
   exit $?
 fi
 
@@ -117,4 +128,4 @@ if ! printf '%s' ":$PATH:" | grep -q ":$LOCAL_BIN:"; then
   echo ""
 fi
 
-"$INSTALL_DIR/bin/aiwrap" install "$@"
+run_aiwrap_install "$INSTALL_DIR/bin/aiwrap" "$@"
