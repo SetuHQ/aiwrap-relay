@@ -7,7 +7,13 @@
   `aiwrap` only reads that file; it never writes to it.
 - That token **is** written, in plaintext, into `~/.codex/config.toml` as an
   `http_headers = { Authorization = "Bearer …" }` value, and passed to
-  `claude mcp add --header`. Both files are written `0600`.
+  `claude mcp add --header`.
+
+  `~/.codex/config.toml` is written `0600` and then explicitly `chmod`ed to
+  `0600`. The chmod is not redundant: Node applies `writeFile`'s `mode` option
+  only when it *creates* the file, so rewriting an existing `0644` config would
+  otherwise leave the token group- and world-readable. `aiwrap` cannot control
+  the permissions of Claude Code's own `~/.claude.json`.
 
   This is a deliberate trade-off. Codex's `bearer_token_env_var` reads from the process
   environment, and the Codex desktop app is a macOS GUI application that does not inherit
