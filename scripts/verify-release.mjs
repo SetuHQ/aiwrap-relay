@@ -11,9 +11,15 @@ const releaseDir = join(root, "release");
 const checksumsPath = join(releaseDir, "checksums.txt");
 const requiredFiles = [
   "aiwrap/bin/aiwrap",
+  "aiwrap/VERSION",
+];
+
+// Files that must NOT ship any more: the vendored npm `hindsight-mcp` (an
+// unrelated product) and its stdio launcher. Asserting their absence keeps a
+// stale build from silently reintroducing them.
+const forbiddenFiles = [
   "aiwrap/bin/hindsight-mcp",
   "aiwrap/bin/hindsight-mcp-launcher",
-  "aiwrap/VERSION",
 ];
 
 const checksums = await parseChecksums(checksumsPath);
@@ -50,6 +56,9 @@ async function verifyArchive(archiveName, expectedChecksum) {
   const entries = new Set(list.stdout.trim().split("\n"));
   for (const file of requiredFiles) {
     if (!entries.has(file)) throw new Error(`${archiveName} missing ${file}`);
+  }
+  for (const file of forbiddenFiles) {
+    if (entries.has(file)) throw new Error(`${archiveName} still ships obsolete ${file}`);
   }
 
   const extractDir = await mkdtemp(join(tmpdir(), `aiwrap-${basename(archiveName, ".tar.gz")}-`));

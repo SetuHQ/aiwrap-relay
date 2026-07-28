@@ -19,19 +19,13 @@ await rm(join(dist, packageName), { recursive: true, force: true });
 await mkdir(binDir, { recursive: true });
 
 const packagedCli = join(root, "binaries", `cli-${releaseArch}`);
-const packagedHindsight = join(root, "binaries", `hindsight-mcp-${releaseArch}`);
 if (!existsSync(packagedCli)) throw new Error(`Missing ${packagedCli}. Run npm run build:binary first.`);
-if (!existsSync(packagedHindsight)) throw new Error(`Missing ${packagedHindsight}. Run npm run build:hindsight-binary first.`);
 
 await copyFile(packagedCli, join(binDir, "aiwrap"));
 await chmod(join(binDir, "aiwrap"), 0o755);
-await writeFile(join(binDir, "hindsight-mcp-launcher"), `#!/bin/sh
-set -eu
-exec "$HOME/.ai-cli-wrapper/bin/aiwrap" launch-hindsight-mcp "$@"
-`, { mode: 0o755 });
 
-await copyFile(packagedHindsight, join(binDir, "hindsight-mcp"));
-await chmod(join(binDir, "hindsight-mcp"), 0o755);
+// Releases no longer ship a vendored memory server. Hindsight is the
+// self-hosted HTTP service; aiwrap only registers clients against it.
 await writeFile(join(packageDir, "VERSION"), `${version}\n`);
 
 const tarball = join(dist, `${packageName}.tar.gz`);

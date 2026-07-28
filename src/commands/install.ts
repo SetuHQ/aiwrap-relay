@@ -1,5 +1,12 @@
 import { exists } from "../lib/files.js";
-import { ensureManagedHindsightMcp, registerClaudeHindsight, registerCodexHindsight } from "../lib/hindsight.js";
+import {
+  hindsightConfig,
+  hindsightInstalled,
+  hindsightReachable,
+  registerClaudeHindsight,
+  registerCodexHindsight,
+  removeStaleHindsightMcp,
+} from "../lib/hindsight.js";
 import { installLaunchers } from "../lib/install-managed.js";
 import { info, statusLine, step } from "../lib/logger.js";
 import { assertMacOS, macArch } from "../lib/platform.js";
@@ -61,15 +68,29 @@ Then rerun:
   }
 
   if (options.hindsight !== false) {
-    const mcpReady = await ensureManagedHindsightMcp();
-    statusLine(mcpReady ? "ok" : "warn", mcpReady ? `Hindsight MCP ready: ${managedPaths.hindsightMcp}` : "Hindsight MCP binary is not bundled yet", mcpReady ? undefined : "Package it into the GitLab release at ~/.ai-cli-wrapper/bin/hindsight-mcp");
-    if (mcpReady && codexPath) {
-      const result = await registerCodexHindsight(Boolean(options.dryRun));
-      statusLine(result.ok ? "ok" : "fix", "Codex Hindsight MCP registration", result.ok ? undefined : "Run: aiwrap repair mcp");
+    if (!options.dryRun) {
+      const cleared = await removeStaleHindsightMcp();
+      if (cleared.length) {
+        statusLine("ok", `Removed obsolete hindsight-mcp entry from: ${cleared.join(", ")}`, "That was the unrelated npm hindsight-mcp, not Vectorize Hindsight.");
+      }
     }
-    if (mcpReady && claudePath) {
-      const result = await registerClaudeHindsight(Boolean(options.dryRun));
-      statusLine(result.ok ? "ok" : "fix", "Claude Hindsight MCP registration", result.ok ? undefined : "Run: aiwrap repair mcp");
+
+    const config = await hindsightConfig();
+    const setUp = await hindsightInstalled();
+    const reachable = await hindsightReachable(config);
+
+    if (!setUp && !reachable) {
+      statusLine("warn", "Hindsight service not found", `Set it up at ~/hindsight, then run: aiwrap repair mcp\nExpected API at ${config.url}`);
+    } else {
+      statusLine(reachable ? "ok" : "warn", `Hindsight API: ${config.url}`, reachable ? undefined : "Not responding. Start it: cd ~/hindsight && ./scripts/up.sh");
+      if (codexPath) {
+        const result = await registerCodexHindsight(Boolean(options.dryRun));
+        statusLine(result.ok ? "ok" : "fix", "Codex Hindsight MCP registration", result.ok ? undefined : "Run: aiwrap repair mcp");
+      }
+      if (claudePath) {
+        const result = await registerClaudeHindsight(Boolean(options.dryRun));
+        statusLine(result.ok ? "ok" : "fix", "Claude Hindsight MCP registration", result.ok ? undefined : "Run: aiwrap repair mcp");
+      }
     }
   }
 

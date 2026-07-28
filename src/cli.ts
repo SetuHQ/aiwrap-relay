@@ -4,20 +4,13 @@ import { installCommand } from "./commands/install.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { repairCommand } from "./commands/repair.js";
 import { uninstallCommand } from "./commands/uninstall.js";
-import { launchHindsightMcpCommand } from "./commands/launch-hindsight-mcp.js";
 
-if (process.argv[2] === "launch-hindsight-mcp") {
-  launchHindsightMcpCommand(process.argv.slice(3)).catch((error) => {
-    console.error(error instanceof Error ? error.message : String(error));
-    process.exitCode = 1;
-  });
-} else {
 const program = new Command();
 
 program
   .name("aiwrap")
-  .description("macOS wrapper for Codex and Claude with RTK and Hindsight MCP")
-  .version("0.1.2");
+  .description("macOS wrapper for Codex and Claude with RTK and Hindsight memory")
+  .version("0.2.0");
 
 program
   .command("install")
@@ -25,7 +18,7 @@ program
   .option("--codex-only", "configure Codex only")
   .option("--claude-only", "configure Claude only")
   .option("--no-rtk", "skip RTK setup")
-  .option("--no-hindsight", "skip Hindsight MCP setup")
+  .option("--no-hindsight", "skip Hindsight memory setup")
   .option("--dry-run", "show actions without changing files")
   .option("--yes", "accept non-secret prompts")
   .option("--verbose", "print detailed diagnostics")
@@ -51,15 +44,7 @@ program
   .option("--yes", "do not prompt")
   .action(uninstallCommand);
 
-program
-  .command("launch-hindsight-mcp", { hidden: true })
-  .allowUnknownOption(true)
-  .allowExcessArguments(true)
-  .argument("[args...]", "arguments passed to hindsight-mcp")
-  .action(launchHindsightMcpCommand);
-
 program.parseAsync().catch((error) => {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
 });
-}

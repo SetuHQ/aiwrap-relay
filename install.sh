@@ -105,7 +105,10 @@ fi
 
 mkdir -p "$INSTALL_DIR" "$LOCAL_BIN"
 tar -xzf "$TARBALL" -C "$INSTALL_DIR" --strip-components=1
-chmod +x "$INSTALL_DIR/bin/aiwrap" "$INSTALL_DIR/bin/hindsight-mcp-launcher" "$INSTALL_DIR/bin/hindsight-mcp" 2>/dev/null || true
+chmod +x "$INSTALL_DIR/bin/aiwrap" 2>/dev/null || true
+# Left by aiwrap <= 0.1.2, which vendored the unrelated npm hindsight-mcp and
+# ran it over stdio. Hindsight is now the self-hosted HTTP service.
+rm -f "$INSTALL_DIR/bin/hindsight-mcp-launcher" "$INSTALL_DIR/bin/hindsight-mcp" 2>/dev/null || true
 AIWRAP_LINK="$LOCAL_BIN/aiwrap"
 AIWRAP_TARGET="$INSTALL_DIR/bin/aiwrap"
 if [ -L "$AIWRAP_LINK" ]; then
