@@ -1,4 +1,10 @@
-import { ensureManagedHindsightMcp, registerClaudeHindsight, registerCodexHindsight } from "../lib/hindsight.js";
+import {
+  hindsightConfig,
+  hindsightReachable,
+  registerClaudeHindsight,
+  registerCodexHindsight,
+  removeStaleHindsightMcp,
+} from "../lib/hindsight.js";
 import { installLaunchers } from "../lib/install-managed.js";
 import { statusLine, step } from "../lib/logger.js";
 import { assertMacOS } from "../lib/platform.js";
@@ -24,9 +30,21 @@ export async function repairCommand(target = "all") {
   }
 
   if (target === "all" || target === "mcp") {
-    const ready = await ensureManagedHindsightMcp();
-    statusLine(ready ? "ok" : "warn", "Hindsight MCP binary", ready ? undefined : "Bundle hindsight-mcp into the release first.");
-    if (ready && codex) await registerCodexHindsight(false);
-    if (ready && claude) await registerClaudeHindsight(false);
+    const cleared = await removeStaleHindsightMcp();
+    if (cleared.length) statusLine("ok", `Removed obsolete hindsight-mcp entry from: ${cleared.join(", ")}`);
+
+    const config = await hindsightConfig();
+    const reachable = await hindsightReachable(config);
+    statusLine(reachable ? "ok" : "warn", `Hindsight API: ${config.url}`, reachable ? undefined : "Not responding. Start it: cd ~/hindsight && ./scripts/up.sh");
+
+    // Register regardless of reachability — the config is still correct when
+    // the service is merely stopped, and re-running once it is up is a no-op.
+    const codexResult = await registerCodexHindsight(false);
+    statusLine(codexResult.ok ? "ok" : "warn", "Codex Hindsight MCP", codexResult.ok ? undefined : codexResult.stderr);
+    if (claude) {
+      const claudeResult = await registerClaudeHindsight(false);
+      statusLine(claudeResult.ok ? "ok" : "warn", "Claude Hindsight MCP", claudeResult.ok ? undefined : claudeResult.stderr);
+    }
+    if (!codex) statusLine("skip", "Codex CLI not on PATH", "Config file was still updated for the Codex desktop app.");
   }
 }

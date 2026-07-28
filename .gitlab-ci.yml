@@ -17,7 +17,6 @@ build:
   stage: build
   script:
     - npm run build:binary
-    - npm run build:hindsight-binary
     - AIWRAP_PACKAGE_ARCH=arm64 npm run package:release
     - AIWRAP_PACKAGE_ARCH=x64 npm run package:release
     - npm run verify:release

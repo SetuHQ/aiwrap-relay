@@ -14,7 +14,7 @@ This project intentionally does not install Codex or Claude for you.
 ## Quick Start
 
 ```bash
-curl -fsSL https://gitlab.com/brokentusk/platform/aiwrap-relay/-/raw/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/SetuHQ/aiwrap-relay/main/install.sh | sh
 aiwrap doctor
 codex
 claude
@@ -29,8 +29,8 @@ If only Codex is installed, `aiwrap` configures Codex only. If only Claude is in
 - Configures RTK using upstream-supported setup:
   - Claude: `rtk init -g`
   - Codex: `rtk init -g --codex`
-- Registers Hindsight MCP for detected clients.
-- Stores the Hindsight token in macOS Keychain.
+- Registers the self-hosted Hindsight MCP endpoint for detected clients.
+- Removes the obsolete vendored `hindsight-mcp` binary and its client entries.
 - Provides `aiwrap doctor` as the validation and repair loop.
 
 ## What This Does Not Do
@@ -40,8 +40,11 @@ If only Codex is installed, `aiwrap` configures Codex only. If only Claude is in
 - Does not require Homebrew, npm global install, Cargo, pip, or sudo for users.
 - Does not replace `codex` or `claude`.
 - Does not affect browser/chat apps such as ChatGPT web or Claude.ai.
-- Does not write Hindsight tokens into Codex or Claude config files.
-- Does not remove unrelated MCP servers or user config.
+- Does not run, install, or bundle a Hindsight server — it only points clients at yours.
+- Does not configure Hindsight Cloud. It reads the local tenant token from
+  `~/hindsight/.env` and never writes to that file.
+- Does not remove unrelated MCP servers or user config. The one exception is the obsolete
+  `hindsight-mcp` entry that earlier versions of `aiwrap` created themselves.
 
 ## Commands
 
@@ -49,7 +52,6 @@ If only Codex is installed, `aiwrap` configures Codex only. If only Claude is in
 aiwrap install
 aiwrap doctor
 aiwrap doctor --verbose
-aiwrap configure hindsight
 aiwrap repair
 aiwrap repair rtk
 aiwrap repair mcp
@@ -58,26 +60,26 @@ aiwrap uninstall
 
 After install, continue using your normal `codex` and `claude` commands.
 
-## Hindsight Setup
+## Hindsight Local Setup
 
-During install, `aiwrap` prompts for Hindsight setup.
-
-Steps to create a token:
-
-1. Open your Hindsight dashboard.
-2. Go to API Settings.
-3. Create a Personal Access Token.
-4. Grant memory read/write scopes.
-5. Copy the token.
-6. Paste it into the `aiwrap` prompt. Input is hidden.
-
-You can skip and configure later:
+`aiwrap` points detected clients at a **self-hosted [Vectorize Hindsight](https://hindsight.vectorize.io)** server over HTTP. It does not run or bundle a memory server itself — set the service up first (see `~/hindsight/README.md`), then:
 
 ```bash
-aiwrap configure hindsight
+aiwrap repair mcp
 ```
 
-The token is stored in macOS Keychain under service `aiwrap.hindsight`, account `default`.
+Connection details are read from `~/hindsight/.env`, overridable per-shell:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `HINDSIGHT_URL` | `http://127.0.0.1:8888` | API base URL |
+| `HINDSIGHT_BANK` | `pulkit` | bank the MCP endpoint is pinned to |
+| `HINDSIGHT_TOKEN` | from `~/hindsight/.env` | tenant API key |
+
+> **Name collision.** `hindsight-mcp` on npm is a *different* product
+> ([hindsight-ai/hindsight-ai](https://github.com/hindsight-ai/hindsight-ai)). aiwrap ≤ 0.1.2
+> vendored it and ran it over stdio. `aiwrap install` and `aiwrap repair mcp` now delete that
+> binary and remove its client registration.
 
 ## Architecture
 
@@ -86,20 +88,22 @@ codex / claude
       |
       +-- RTK configured by upstream init
       |
-      +-- Hindsight MCP
+      +-- Hindsight MCP (streamable HTTP)
               |
-              +-- hindsight-mcp-launcher
+              +-- http://127.0.0.1:8888/mcp/<bank>/
                       |
-                      +-- macOS Keychain token
-                      +-- ~/.ai-cli-wrapper/bin/hindsight-mcp
+                      +-- self-hosted Hindsight (docker, ~/hindsight)
 ```
 
 ## Files
 
 - `~/.ai-cli-wrapper/` stores managed binaries, config, logs, and backups.
 - `~/.local/bin/aiwrap` symlinks to the managed binary.
-- `~/.codex/config.toml` may receive a Hindsight MCP entry through Codex MCP setup.
-- Claude Code user MCP config may receive a Hindsight MCP entry through `claude mcp add --scope user`.
+- `~/.codex/config.toml` receives an `[mcp_servers.hindsight]` table written directly, because
+  the Codex desktop app ships no CLI and, being a GUI app, cannot resolve
+  `bearer_token_env_var` from your shell environment.
+- Claude Code user MCP config receives a `hindsight` entry via `claude mcp add --scope user`.
+- `~/hindsight/.env` is read for the API token. It is never written to.
 
 ## Troubleshooting
 
@@ -108,7 +112,6 @@ codex / claude
 | `aiwrap: command not found` | `~/.local/bin` is not on `PATH` | Add `export PATH="$HOME/.local/bin:$PATH"` to `~/.zshrc` |
 | RTK installed but no savings | RTK init not active or client not restarted | Run `aiwrap repair rtk`, restart Codex/Claude |
 | Hindsight unavailable | MCP not registered or client not restarted | Run `aiwrap repair mcp`, restart Codex/Claude |
-| Hindsight auth fails | Missing or invalid token | Run `aiwrap configure hindsight` |
 | macOS blocks binary | Gatekeeper quarantine | Run `xattr -d com.apple.quarantine ~/.ai-cli-wrapper/bin/<binary>` |
 | Duplicate MCP server | Existing manual config | Run `aiwrap doctor --verbose` and decide whether to replace manually |
 
@@ -132,11 +135,11 @@ exec zsh
 Primary acceptance test:
 
 ```bash
-curl -fsSL https://gitlab.com/brokentusk/platform/aiwrap-relay/-/raw/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/SetuHQ/aiwrap-relay/main/install.sh | sh
 aiwrap doctor
 codex --version
 claude --version
-~/.ai-cli-wrapper/bin/hindsight-mcp-launcher --version
+curl -fsS http://127.0.0.1:8888/health
 ```
 
 Pass criteria:
@@ -146,9 +149,9 @@ Pass criteria:
 - Codex and Claude are not installed by `aiwrap`.
 - At least one detected client is configured.
 - RTK is configured using upstream mechanisms.
-- Hindsight token is not stored in plaintext config.
-- Hindsight MCP launcher passes arguments through to the bundled MCP binary.
-- Re-running install is safe.
+- Hindsight Cloud tokens are not configured or stored by `aiwrap`.
+- The obsolete `hindsight-mcp` binary and client entries are gone after install.
+- Re-running install is safe and changes nothing.
 
 ## Release Packaging
 
@@ -169,7 +172,14 @@ release/aiwrap-darwin-x64.tar.gz
 release/checksums.txt
 ```
 
-Publish the tarballs and `checksums.txt` to GitLab Releases. The bootstrap installer verifies SHA-256 before extracting.
+Publish the tarballs and `checksums.txt` to GitLab Releases or GitHub Releases. The bootstrap installer verifies SHA-256 before extracting.
+
+For an alternate GitHub repo, override `AIWRAP_REPO_URL`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/<owner>/aiwrap-relay/main/install.sh | \
+  AIWRAP_REPO_URL="https://github.com/<owner>/aiwrap-relay" sh
+```
 
 Verify release artifacts locally:
 
@@ -190,7 +200,7 @@ Use `aiwrap uninstall` after a full local install test if you want to remove man
 ## Uninstall
 
 ```bash
-curl -fsSL https://gitlab.com/brokentusk/platform/aiwrap-relay/-/raw/main/uninstall.sh | sh
+curl -fsSL https://raw.githubusercontent.com/SetuHQ/aiwrap-relay/main/uninstall.sh | sh
 ```
 
 Uninstall removes only `aiwrap`-managed files and launchers. It does not uninstall Codex, Claude, or your Hindsight account data.
@@ -210,7 +220,7 @@ Package manager usage is for contributors only. User releases should be standalo
 ## Safety Guarantees
 
 - We do not replace `codex` or `claude`.
-- We do not store Hindsight tokens in Codex or Claude config files.
+- We do not configure Hindsight Cloud or store Hindsight API tokens.
 - We do not overwrite unrelated MCP servers.
 - The installer is designed to be safe to re-run.
 - The uninstaller removes only wrapper-managed files and config entries.

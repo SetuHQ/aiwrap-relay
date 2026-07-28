@@ -13,7 +13,7 @@ case "$ARCH" in
   *) echo "Unsupported macOS architecture: $ARCH" >&2; exit 1 ;;
 esac
 
-REPO_URL="${AIWRAP_REPO_URL:-https://gitlab.com/brokentusk/platform/aiwrap-relay}"
+REPO_URL="${AIWRAP_REPO_URL:-https://github.com/SetuHQ/aiwrap-relay}"
 VERSION="${AIWRAP_VERSION:-latest}"
 INSTALL_DIR="$HOME/.ai-cli-wrapper"
 LOCAL_BIN="$HOME/.local/bin"
@@ -31,6 +31,17 @@ download() {
     curl -fsSL "$1" -o "$2"
   fi
 }
+run_aiwrap_install() {
+  aiwrap_bin="$1"
+  shift
+  if { exec 3</dev/tty; } 2>/dev/null; then
+    "$aiwrap_bin" install "$@" <&3
+    status=$?
+    exec 3<&-
+    return "$status"
+  fi
+  "$aiwrap_bin" install "$@"
+}
 trap cleanup EXIT INT TERM
 for arg in "$@"; do
   if [ "$arg" = "--dry-run" ]; then
@@ -45,13 +56,26 @@ else
   CLEANUP_DIRS="$CLEANUP_DIRS $TMPDIR"
   TARBALL="$TMPDIR/$ASSET"
   CHECKSUMS="$TMPDIR/checksums.txt"
-  if [ "$VERSION" = "latest" ]; then
-    URL="$REPO_URL/-/releases/permalink/latest/downloads/$ASSET"
-    CHECKSUM_URL="$REPO_URL/-/releases/permalink/latest/downloads/checksums.txt"
-  else
-    URL="$REPO_URL/-/releases/$VERSION/downloads/$ASSET"
-    CHECKSUM_URL="$REPO_URL/-/releases/$VERSION/downloads/checksums.txt"
-  fi
+  case "$REPO_URL" in
+    *github.com*)
+      if [ "$VERSION" = "latest" ]; then
+        URL="$REPO_URL/releases/latest/download/$ASSET"
+        CHECKSUM_URL="$REPO_URL/releases/latest/download/checksums.txt"
+      else
+        URL="$REPO_URL/releases/download/$VERSION/$ASSET"
+        CHECKSUM_URL="$REPO_URL/releases/download/$VERSION/checksums.txt"
+      fi
+      ;;
+    *)
+      if [ "$VERSION" = "latest" ]; then
+        URL="$REPO_URL/-/releases/permalink/latest/downloads/$ASSET"
+        CHECKSUM_URL="$REPO_URL/-/releases/permalink/latest/downloads/checksums.txt"
+      else
+        URL="$REPO_URL/-/releases/$VERSION/downloads/$ASSET"
+        CHECKSUM_URL="$REPO_URL/-/releases/$VERSION/downloads/checksums.txt"
+      fi
+      ;;
+  esac
   echo "Downloading $URL"
   download "$URL" "$TARBALL"
   echo "Downloading $CHECKSUM_URL"
@@ -75,13 +99,16 @@ if [ "$DRY_RUN" = "1" ]; then
   CLEANUP_DIRS="$CLEANUP_DIRS $EXTRACT_DIR"
   tar -xzf "$TARBALL" -C "$EXTRACT_DIR"
   chmod +x "$EXTRACT_DIR/aiwrap/bin/aiwrap" 2>/dev/null || true
-  "$EXTRACT_DIR/aiwrap/bin/aiwrap" install "$@"
+  run_aiwrap_install "$EXTRACT_DIR/aiwrap/bin/aiwrap" "$@"
   exit $?
 fi
 
 mkdir -p "$INSTALL_DIR" "$LOCAL_BIN"
 tar -xzf "$TARBALL" -C "$INSTALL_DIR" --strip-components=1
-chmod +x "$INSTALL_DIR/bin/aiwrap" "$INSTALL_DIR/bin/hindsight-mcp-launcher" "$INSTALL_DIR/bin/hindsight-mcp" 2>/dev/null || true
+chmod +x "$INSTALL_DIR/bin/aiwrap" 2>/dev/null || true
+# Left by aiwrap <= 0.1.2, which vendored the unrelated npm hindsight-mcp and
+# ran it over stdio. Hindsight is now the self-hosted HTTP service.
+rm -f "$INSTALL_DIR/bin/hindsight-mcp-launcher" "$INSTALL_DIR/bin/hindsight-mcp" 2>/dev/null || true
 AIWRAP_LINK="$LOCAL_BIN/aiwrap"
 AIWRAP_TARGET="$INSTALL_DIR/bin/aiwrap"
 if [ -L "$AIWRAP_LINK" ]; then
@@ -104,4 +131,4 @@ if ! printf '%s' ":$PATH:" | grep -q ":$LOCAL_BIN:"; then
   echo ""
 fi
 
-"$INSTALL_DIR/bin/aiwrap" install "$@"
+run_aiwrap_install "$INSTALL_DIR/bin/aiwrap" "$@"
