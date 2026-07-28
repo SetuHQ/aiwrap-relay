@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { chmod, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { CODEX_CONFIG } from "./paths.js";
@@ -71,8 +71,11 @@ export async function registerClaudeHindsight(dryRun = false) {
   const config = await hindsightConfig();
   await removeStaleClaudeEntry();
 
-  const existing = await listClaudeMcp();
-  if (existing.ok && new RegExp(`^${HINDSIGHT_SERVER_NAME}:`, "m").test(existing.stdout)) {
+  // Compare against what is actually stored, not merely whether a `hindsight`
+  // entry exists. Skipping on presence alone left a rotated token in place,
+  // which then 401s on every call — the registration looks healthy in
+  // `claude mcp list` while being unusable.
+  if (await claudeEntryUpToDate(config)) {
     return { ok: true as const, stderr: "" };
   }
 
@@ -87,7 +90,50 @@ export async function registerClaudeHindsight(dryRun = false) {
     config.mcpUrl,
   ];
   if (config.token) args.push("--header", `Authorization: Bearer ${config.token}`);
-  return runSafe("claude", args);
+
+  // `claude mcp add` refuses to overwrite, so an out-of-date entry must be
+  // removed first. That opens a window where a failed add leaves no
+  // registration at all, so surface it explicitly rather than silently.
+  const hadEntry = await claudeEntryExists();
+  if (hadEntry) {
+    await runSafe("claude", ["mcp", "remove", "--scope", "user", HINDSIGHT_SERVER_NAME]);
+  }
+  const result = await runSafe("claude", args);
+  if (!result.ok && hadEntry) {
+    return {
+      ok: false as const,
+      stdout: result.stdout,
+      stderr: `${result.stderr}\nThe previous '${HINDSIGHT_SERVER_NAME}' entry was removed and could not be replaced. Re-run: aiwrap repair mcp`,
+    };
+  }
+  return result;
+}
+
+/** Read the stored Claude Code MCP entry for Hindsight, if any. */
+async function claudeStoredEntry(): Promise<{ url?: string; headers?: Record<string, string> } | null> {
+  const text = await readIfExists(join(homedir(), ".claude.json"));
+  if (!text) return null;
+  try {
+    const parsed = JSON.parse(text) as { mcpServers?: Record<string, { url?: string; headers?: Record<string, string> }> };
+    return parsed.mcpServers?.[HINDSIGHT_SERVER_NAME] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function claudeEntryExists(): Promise<boolean> {
+  if (await claudeStoredEntry()) return true;
+  const list = await listClaudeMcp();
+  return list.ok && new RegExp(`^${HINDSIGHT_SERVER_NAME}:`, "m").test(list.stdout);
+}
+
+/** True when the stored entry already points at this url with this token. */
+async function claudeEntryUpToDate(config: HindsightConfig): Promise<boolean> {
+  const entry = await claudeStoredEntry();
+  if (!entry || entry.url !== config.mcpUrl) return false;
+  const stored = entry.headers?.Authorization ?? "";
+  const wanted = config.token ? `Bearer ${config.token}` : "";
+  return stored === wanted;
 }
 
 export async function registerCodexHindsight(dryRun = false) {
@@ -127,13 +173,25 @@ export async function listCodexMcp() {
 // --------------------------------------------------------------------------
 
 /**
- * Match a TOML table: the header line plus every following line that does not
- * itself open a new table. Line-anchored, so a value containing a bracket
- * (args = ["a"]) does not truncate the match.
+ * Match a TOML table AND its dotted subtables: the header line plus every
+ * following line that does not open an unrelated table.
+ *
+ * Including subtables is load-bearing. TOML creates a parent implicitly from a
+ * dotted child, so leaving `[mcp_servers.hindsight-mcp.env]` behind after
+ * removing `[mcp_servers.hindsight-mcp]` resurrects the entry as a malformed
+ * server with no command and no url — reviving exactly what the removal exists
+ * to delete. Codex does use this shape (`[mcp_servers.node_repl.env]`).
+ *
+ * Line-anchored rather than "any char except [", so a value containing a
+ * bracket (args = ["a"]) does not truncate the match.
  */
 function tablePattern(name: string): RegExp {
   const escaped = name.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&");
-  return new RegExp(`^\\[${escaped}\\][^\\n]*\\n(?:(?!\\[)[^\\n]*\\n?)*`, "m");
+  // [name] or [name.child] / [name.child.grandchild]
+  const header = `\\[${escaped}(?:\\.[^\\]\\n]+)?\\]`;
+  const body = `[^\\n]*\\n(?:(?!\\[)[^\\n]*\\n?)*`;
+  // Trailing repeat so a run of adjacent subtables is consumed as one block.
+  return new RegExp(`^${header}${body}(?:^${header}${body})*`, "m");
 }
 
 function normaliseToml(text: string): string {
@@ -161,8 +219,20 @@ async function writeCodexEntry(config: HindsightConfig) {
   text = normaliseToml(text);
   if (text === original) return { ok: true as const, stdout: "unchanged", stderr: "" };
 
-  await writeFile(CODEX_CONFIG, text, { mode: 0o600 });
+  await writeSecret(CODEX_CONFIG, text);
   return { ok: true as const, stdout: "updated", stderr: "" };
+}
+
+/**
+ * Write a file that holds a credential, owner-read/write only.
+ *
+ * The explicit chmod is required: `writeFile`'s `mode` option is only honoured
+ * when the file is *created*, so writing over an existing 0644 config would
+ * silently leave the tenant token group- and world-readable.
+ */
+async function writeSecret(path: string, text: string): Promise<void> {
+  await writeFile(path, text, { mode: 0o600 });
+  await chmod(path, 0o600);
 }
 
 async function removeStaleCodexEntry(): Promise<boolean> {
@@ -172,7 +242,7 @@ async function removeStaleCodexEntry(): Promise<boolean> {
     original.replace(tablePattern(`mcp_servers.${STALE_SERVER_NAME}`), ""),
   );
   if (text === original) return false;
-  await writeFile(CODEX_CONFIG, text, { mode: 0o600 });
+  await writeSecret(CODEX_CONFIG, text);
   return true;
 }
 
